@@ -12,7 +12,7 @@ REPORT_FILE = "comment.txt"
 console = Console()
 
 # --- Gemini Setup ---
-# Assumes GOOGLE_API_KEY is set in the environment
+# Assumes GEMINI_API_KEY is set in the environment
 API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     console.print("[bold red]GEMINI_API_KEY environment variable not set! Exiting.")
