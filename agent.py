@@ -13,9 +13,9 @@ console = Console()
 
 # --- Gemini Setup ---
 # Assumes GOOGLE_API_KEY is set in the environment
-API_KEY = os.getenv("GOOGLE_API_KEY")
+API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
-    console.print("[bold red]GOOGLE_API_KEY environment variable not set! Exiting.")
+    console.print("[bold red]GEMINI_API_KEY environment variable not set! Exiting.")
     sys.exit(1)
 genai.configure(api_key=API_KEY)
 
