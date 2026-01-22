@@ -25,7 +25,7 @@ jobs:
         run: |
           docker run --rm \
             -v "${{ github.workspace }}:/github/workspace" \
-            -e GOOGLE_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+            -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
             -w /github/workspace \
           - name: Debug: Print env vars in Docker
             run: |
