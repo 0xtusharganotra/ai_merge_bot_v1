@@ -17,30 +17,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build Docker image
-        run: docker build -t ai-merge-agent .
-
       - name: Run AI Merge Agent
-        id: run_agent
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           docker run --rm \
-            -v "${{ github.workspace }}:/github/workspace" \
-            -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+            -v ${{ github.workspace }}:/github/workspace \
             -w /github/workspace \
-          - name: Debug: Print env vars in Docker
-            run: |
-              docker run --rm \
-                -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
-                -v ${{ github.workspace }}:/repo \
-                -w /repo \
-                tusharganotra/ai-merge-bot:v1 env
-          - name: Run AI Merge Bot
-            run: |
-              docker run --rm \
-                -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
-                -v ${{ github.workspace }}:/repo \
-                -w /repo \
-                tusharganotra/ai-merge-bot:v1
+            -e GEMINI_API_KEY="$GEMINI_API_KEY" \
+            tusharganotra/ai-merge-bot:v1
+
+      - name: Post Gemini Report
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
             const path = 'comment.txt';
             if (fs.existsSync(path)) {
               const body = fs.readFileSync(path, 'utf8');
@@ -50,12 +42,3 @@ jobs:
                 body
               });
             }
-
-# ---
-# To use this workflow, add your Gemini API key as a repository secret named GEMINI_API_KEY:
-# 1. Go to your GitHub repository > Settings > Secrets and variables > Actions.
-# 2. Click "New repository secret".
-# 3. Name: GEMINI_API_KEY
-# 4. Value: <your Gemini API key>
-# 5. Save.
-# ---
