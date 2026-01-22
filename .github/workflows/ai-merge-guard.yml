@@ -31,7 +31,7 @@ jobs:
         continue-on-error: true
 
       - name: Post PR comment if needed
-        if: env.exit_code == '1' || (exists('comment.txt') && hashFiles('comment.txt') != '')
+        if: env.exit_code == '1' || hashFiles('comment.txt') != ''
         uses: actions/github-script@v7
         with:
           script: |
