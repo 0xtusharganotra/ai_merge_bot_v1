@@ -9,4 +9,8 @@ COPY requirements.txt agent.py ./
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+# GEMINI_API_KEY environment variable is required at runtime
+# Pass it using: docker run -e GEMINI_API_KEY=your_key_here ...
+ENV GEMINI_API_KEY=""
+
 ENTRYPOINT ["python", "/app/agent.py"]
