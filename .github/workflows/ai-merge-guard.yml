@@ -1,0 +1,56 @@
+name: AI Merge Guard
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-merge-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build Docker image
+        run: docker build -t ai-merge-agent .
+
+      - name: Run AI Merge Agent
+        id: run_agent
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/github/workspace" \
+            -e GOOGLE_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+            -w /github/workspace \
+            ai-merge-agent || echo "exit_code=1" >> $GITHUB_ENV
+        continue-on-error: true
+
+      - name: Post PR comment if needed
+        if: env.exit_code == '1' || (exists('comment.txt') && hashFiles('comment.txt') != '')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'comment.txt';
+            if (fs.existsSync(path)) {
+              const body = fs.readFileSync(path, 'utf8');
+              github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }
+
+# ---
+# To use this workflow, add your Gemini API key as a repository secret named GEMINI_API_KEY:
+# 1. Go to your GitHub repository > Settings > Secrets and variables > Actions.
+# 2. Click "New repository secret".
+# 3. Name: GEMINI_API_KEY
+# 4. Value: <your Gemini API key>
+# 5. Save.
+# ---
