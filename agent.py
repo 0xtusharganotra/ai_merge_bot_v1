@@ -29,8 +29,7 @@ def generate_report_header():
 
 ---
 
-**Automated Semantic Merge Conflict Detection**  
-*Powered by Google Gemini AI*
+**Automated Semantic Merge Conflict Detection**
 
 ---
 
@@ -50,12 +49,6 @@ The AI Merge Guard has successfully analyzed this pull request and found **no ri
 
 ### Result
 Your changes are safe to merge. No files were moved that have also been modified in the main branch.
-
----
-
-*This automated check helps prevent subtle merge issues where file relocations can cause changes to be lost or overwritten.*
-
-> **AI Merge Guard** - Keeping your codebase safe, one merge at a time. 🛡️
 """
 
 def generate_conflict_report(conflicts, gemini_analysis):
