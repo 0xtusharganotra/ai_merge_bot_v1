@@ -23,6 +23,110 @@ def write_report(message):
         f.write(message)
     console.print(f"[dim]Report written to {REPORT_FILE}[/dim]")
 
+def generate_report_header():
+    """Generate a professional report header."""
+    return """# 🤖 AI MERGE GUARD - Analysis Report
+
+---
+
+**Automated Semantic Merge Conflict Detection**  
+*Powered by Google Gemini AI*
+
+---
+
+"""
+
+def generate_success_report():
+    """Generate a detailed success report."""
+    return generate_report_header() + """## ✅ Status: ALL CHECKS PASSED
+
+### Summary
+The AI Merge Guard has successfully analyzed this pull request and found **no risky semantic merge conflicts**.
+
+### What was checked:
+- 🔍 Scanned for files moved/renamed in this PR
+- 🔍 Cross-referenced with modifications in the target branch
+- 🔍 Analyzed potential semantic conflicts that Git might miss
+
+### Result
+Your changes are safe to merge. No files were moved that have also been modified in the main branch.
+
+---
+
+*This automated check helps prevent subtle merge issues where file relocations can cause changes to be lost or overwritten.*
+
+> **AI Merge Guard** - Keeping your codebase safe, one merge at a time. 🛡️
+"""
+
+def generate_conflict_report(conflicts, gemini_analysis):
+    """Generate a detailed conflict report."""
+    conflict_list = "\n".join([f"- `{c['old_path']}` → `{c['new_path']}`" for c in conflicts])
+    return generate_report_header() + f"""## ⚠️ Status: RISKY MERGE DETECTED
+
+### Summary
+The AI Merge Guard has detected **{len(conflicts)} potential semantic merge conflict(s)** that require your attention.
+
+### Detected Conflicts
+The following files were **moved/renamed in this PR** but have also been **modified in the main branch**:
+
+{conflict_list}
+
+### Why This Matters
+When a file is moved in your branch while someone else modifies the original file in main, Git may not properly merge these changes. This can lead to:
+- Lost code changes
+- Unexpected behavior after merge
+- Silent failures that are hard to debug
+
+---
+
+## 🧠 Gemini AI Analysis
+
+{gemini_analysis}
+
+---
+
+### Recommended Actions
+1. Review the conflicts listed above
+2. Follow the Git commands provided by Gemini
+3. Test thoroughly after resolving conflicts
+4. Re-run the PR checks after fixes
+
+---
+
+*This automated check helps prevent subtle merge issues where file relocations can cause changes to be lost or overwritten.*
+
+> **AI Merge Guard** - Keeping your codebase safe, one merge at a time. 🛡️
+"""
+
+def generate_error_report(error_msg):
+    """Generate a detailed error report."""
+    return generate_report_header() + f"""## ❌ Status: ANALYSIS ERROR
+
+### Summary
+The AI Merge Guard encountered an error while analyzing this pull request.
+
+### Error Details
+```
+{error_msg}
+```
+
+### Possible Causes
+- Missing or invalid API key
+- Repository access issues
+- Network connectivity problems
+- Git configuration issues
+
+### Recommended Actions
+1. Check that the `GEMINI_API_KEY` secret is properly configured
+2. Ensure the repository has proper permissions
+3. Re-run the workflow
+4. Contact the repository maintainer if the issue persists
+
+---
+
+> **AI Merge Guard** - Keeping your codebase safe, one merge at a time. 🛡️
+"""
+
 def run_server():
     if Flask is None:
         print("Flask is not installed. Please install Flask to use the server mode.")
@@ -41,9 +145,9 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 
 def configure_gemini():
     if not API_KEY:
-        error_msg = "❌ GEMINI_API_KEY environment variable not set!"
+        error_msg = "GEMINI_API_KEY environment variable not set!"
         console.print(f"[bold red]{error_msg}")
-        write_report(error_msg)
+        write_report(generate_error_report(error_msg))
         sys.exit(1)
     genai.configure(api_key=API_KEY)
 
@@ -99,27 +203,27 @@ def main():
         try:
             repo = Repo(os.getcwd())
         except Exception as e:
-            error_msg = f"❌ Error accessing git repository: {e}"
+            error_msg = f"Error accessing git repository: {e}"
             console.print(f"[bold red]{error_msg}")
-            write_report(error_msg)
+            write_report(generate_error_report(error_msg))
             sys.exit(1)
         
         try:
             # Fetch latest origin/main
             repo.remotes.origin.fetch()
         except Exception as e:
-            error_msg = f"❌ Error fetching origin: {e}"
+            error_msg = f"Error fetching origin: {e}"
             console.print(f"[bold red]{error_msg}")
-            write_report(error_msg)
+            write_report(generate_error_report(error_msg))
             sys.exit(1)
         
         try:
             merge_base = get_merge_base(repo)
             conflicts = detect_risky_moves(repo, merge_base)
         except Exception as e:
-            error_msg = f"❌ Error analyzing repository: {e}"
+            error_msg = f"Error analyzing repository: {e}"
             console.print(f"[bold red]{error_msg}")
-            write_report(error_msg)
+            write_report(generate_error_report(error_msg))
             sys.exit(1)
     
     console.print(Panel("System Status: AI Agent Live", style="green"))
@@ -130,15 +234,15 @@ def main():
         try:
             gemini_report = analyze_with_gemini(conflicts)
             console.print(Panel.fit(gemini_report, title="Gemini Analysis", style="cyan"), markup=True)
-            write_report(gemini_report)
+            write_report(generate_conflict_report(conflicts, gemini_report))
         except Exception as e:
-            error_msg = f"❌ Error calling Gemini API: {e}"
+            error_msg = f"Error calling Gemini API: {e}"
             console.print(f"[bold red]{error_msg}")
-            write_report(error_msg)
+            write_report(generate_error_report(error_msg))
         sys.exit(1)
     else:
         console.print("[bold green]✅ No risky semantic merge conflicts detected.")
-        write_report("✅ No risky semantic merge conflicts detected.")
+        write_report(generate_success_report())
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Merge Bot")

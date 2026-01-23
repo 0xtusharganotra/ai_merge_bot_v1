@@ -1,0 +1,148 @@
+# AI Merge Guard - Testing Guide
+
+This guide explains how to test the AI Merge Guard bot by simulating semantic merge conflicts.
+
+---
+
+## What is a Semantic Merge Conflict?
+
+A semantic merge conflict occurs when:
+1. You **move/rename a file** in your branch
+2. Someone else **modifies the original file** in main
+3. Git doesn't detect this as a conflict, but the changes may be lost
+
+---
+
+## Test Scenario: Simulating a Risky Merge
+
+### Prerequisites
+- A GitHub repository with the AI Merge Guard workflow configured
+- GEMINI_API_KEY secret set in the repository
+
+### Step-by-Step Instructions
+
+#### Step 1: Set Up the Test Repository
+
+```bash
+# Clone your repository
+git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
+cd YOUR_REPO
+
+# Make sure you're on main
+git checkout main
+git pull origin main
+```
+
+#### Step 2: Create a Test File on Main
+
+```bash
+# Create a test file
+echo "Original content line 1" > test-file.txt
+echo "Original content line 2" >> test-file.txt
+git add test-file.txt
+git commit -m "Add test file"
+git push origin main
+```
+
+#### Step 3: Create a Feature Branch and MOVE the File
+
+```bash
+# Create a new branch
+git checkout -b feature/move-file
+
+# Move/rename the file
+git mv test-file.txt new-location/renamed-file.txt
+
+git commit -m "Move test file to new location"
+git push origin feature/move-file
+```
+
+#### Step 4: Simulate Someone Modifying the Original File on Main
+
+```bash
+# Go back to main
+git checkout main
+
+# Modify the original file (simulating another developer's changes)
+echo "Modified by another developer" >> test-file.txt
+git add test-file.txt
+git commit -m "Update test file with new content"
+git push origin main
+```
+
+#### Step 5: Create a Pull Request
+
+1. Go to your GitHub repository
+2. Create a Pull Request from `feature/move-file` to `main`
+3. The AI Merge Guard workflow will automatically run
+4. Check the Actions tab and PR comments for the bot's analysis
+
+---
+
+## Expected Results
+
+### When Conflict is Detected:
+- The bot will post a detailed comment with:
+  - ⚠️ RISKY MERGE DETECTED heading
+  - List of conflicting files
+  - Gemini AI analysis with resolution steps
+  - Recommended Git commands to fix the issue
+
+### When No Conflicts:
+- The bot will post a success comment with:
+  - ✅ ALL CHECKS PASSED heading
+  - Summary of what was checked
+  - Confirmation that merge is safe
+
+---
+
+## Clean Up After Testing
+
+```bash
+# Delete the test branch locally
+git checkout main
+git branch -D feature/move-file
+
+# Delete the test branch remotely
+git push origin --delete feature/move-file
+
+# Remove test files if needed
+git rm test-file.txt
+git rm -r new-location/
+git commit -m "Clean up test files"
+git push origin main
+```
+
+---
+
+## Troubleshooting
+
+### Bot Not Commenting?
+1. Check that `GEMINI_API_KEY` secret is set correctly
+2. Verify the workflow file is in `.github/workflows/`
+3. Check the Actions tab for error logs
+
+### Bot Shows Error?
+1. Expand the workflow steps in Actions tab
+2. Check "Run AI Merge Bot" step for detailed errors
+3. Common issues:
+   - Invalid API key
+   - Repository permission issues
+   - Missing origin/main branch
+
+---
+
+## Additional Test Scenarios
+
+### Test 1: Multiple File Moves
+Move multiple files and modify their originals on main.
+
+### Test 2: Nested Directory Moves
+Move an entire directory while modifying files within it on main.
+
+### Test 3: No Conflicts (Success Case)
+Create a PR with only additions/modifications (no moves) to verify the success message.
+
+---
+
+*Happy Testing! 🧪*
