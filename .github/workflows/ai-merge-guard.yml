@@ -24,7 +24,8 @@ jobs:
             -v "${{ github.workspace }}:/repo" \
             -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
             -w /repo \
-            tusharganotra/ai-merge-bot:v2
+            tusharganotra/ai-merge-bot:v2 \
+            sh -c "git config --global --add safe.directory /repo && python /app/agent.py"
         continue-on-error: true
 
       - name: Check for comment file
