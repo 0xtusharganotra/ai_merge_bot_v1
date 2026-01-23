@@ -24,6 +24,7 @@ jobs:
             -v "${{ github.workspace }}:/repo" \
             -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
             -w /repo \
+            --entrypoint "" \
             tusharganotra/ai-merge-bot:v2 \
             sh -c "git config --global --add safe.directory /repo && python /app/agent.py"
         continue-on-error: true
