@@ -8,6 +8,7 @@ AI Merge Bot v1 is an intelligent DevOps tool designed to detect and analyze ris
 - **GitPython**: For interacting with Git repositories programmatically.
 - **Rich**: For beautiful console output and progress indicators.
 - **Google Generative AI (Gemini)**: For advanced conflict analysis and resolution suggestions.
+- **Docker
 
 ## How It Works
 1. **Environment Setup**: Requires the `GEMINI_API_KEY` environment variable for Gemini API access.
