@@ -24,11 +24,23 @@ jobs:
             -v "${{ github.workspace }}:/repo" \
             -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
             -w /repo \
-            tusharganotra/ai-merge-bot:v2 || echo "exit_code=1" >> $GITHUB_ENV
+            tusharganotra/ai-merge-bot:v2
         continue-on-error: true
 
+      - name: Check for comment file
+        id: check_comment
+        run: |
+          if [ -f "comment.txt" ]; then
+            echo "has_comment=true" >> $GITHUB_OUTPUT
+            echo "Comment file found:"
+            cat comment.txt
+          else
+            echo "has_comment=false" >> $GITHUB_OUTPUT
+            echo "No comment.txt file found"
+          fi
+
       - name: Post PR comment if needed
-        if: env.exit_code == '1' || hashFiles('comment.txt') != ''
+        if: steps.check_comment.outputs.has_comment == 'true'
         uses: actions/github-script@v7
         with:
           script: |
