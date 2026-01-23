@@ -1,3 +1,4 @@
+flask
 gitpython
 rich
 google-generativeai

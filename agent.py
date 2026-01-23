@@ -1,3 +1,19 @@
+import argparse
+try:
+    from flask import Flask
+except ImportError:
+    Flask = None
+def run_server():
+    if Flask is None:
+        print("Flask is not installed. Please install Flask to use the server mode.")
+        sys.exit(1)
+    app = Flask(__name__)
+
+    @app.route('/')
+    def home():
+        return '<h1>AI Agent running...</h1>'
+
+    app.run(host='0.0.0.0', port=8080)
 import sys
 import os
 from git import Repo
@@ -92,4 +108,10 @@ def main():
             f.write("No risky semantic merge conflicts detected.")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="AI Merge Bot")
+    parser.add_argument('--server', action='store_true', help='Run a web server showing bot status')
+    args = parser.parse_args()
+    if args.server:
+        run_server()
+    else:
+        main()
