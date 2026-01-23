@@ -1,8 +1,28 @@
 import argparse
+import sys
+import os
+from git import Repo
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn
+import google.generativeai as genai
+
 try:
     from flask import Flask
 except ImportError:
     Flask = None
+
+REPORT_FILE = "comment.txt"
+
+# --- Rich UI Setup ---
+console = Console()
+
+def write_report(message):
+    """Always write a report file."""
+    with open(REPORT_FILE, "w", encoding="utf-8") as f:
+        f.write(message)
+    console.print(f"[dim]Report written to {REPORT_FILE}[/dim]")
+
 def run_server():
     if Flask is None:
         print("Flask is not installed. Please install Flask to use the server mode.")
@@ -14,26 +34,18 @@ def run_server():
         return '<h1>AI Agent running...</h1>'
 
     app.run(host='0.0.0.0', port=8080)
-import sys
-import os
-from git import Repo
-from rich.console import Console
-from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
-import google.generativeai as genai
-
-REPORT_FILE = "comment.txt"
-
-# --- Rich UI Setup ---
-console = Console()
 
 # --- Gemini Setup ---
 # Assumes GEMINI_API_KEY is set in the environment
 API_KEY = os.getenv("GEMINI_API_KEY")
-if not API_KEY:
-    console.print("[bold red]GEMINI_API_KEY environment variable not set! Exiting.")
-    sys.exit(1)
-genai.configure(api_key=API_KEY)
+
+def configure_gemini():
+    if not API_KEY:
+        error_msg = "❌ GEMINI_API_KEY environment variable not set!"
+        console.print(f"[bold red]{error_msg}")
+        write_report(error_msg)
+        sys.exit(1)
+    genai.configure(api_key=API_KEY)
 
 # --- Git Logic ---
 def get_merge_base(repo):
@@ -81,31 +93,52 @@ def analyze_with_gemini(conflicts):
     return response.text
 
 def main():
+    configure_gemini()
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), transient=True) as progress:
         progress.add_task(description="🤖 AI Agent is scanning repository...", total=None)
         try:
             repo = Repo(os.getcwd())
         except Exception as e:
-            console.print(f"[bold red]Error: {e}")
+            error_msg = f"❌ Error accessing git repository: {e}"
+            console.print(f"[bold red]{error_msg}")
+            write_report(error_msg)
             sys.exit(1)
-        # Fetch latest origin/main
-        repo.remotes.origin.fetch()
-        merge_base = get_merge_base(repo)
-        conflicts = detect_risky_moves(repo, merge_base)
+        
+        try:
+            # Fetch latest origin/main
+            repo.remotes.origin.fetch()
+        except Exception as e:
+            error_msg = f"❌ Error fetching origin: {e}"
+            console.print(f"[bold red]{error_msg}")
+            write_report(error_msg)
+            sys.exit(1)
+        
+        try:
+            merge_base = get_merge_base(repo)
+            conflicts = detect_risky_moves(repo, merge_base)
+        except Exception as e:
+            error_msg = f"❌ Error analyzing repository: {e}"
+            console.print(f"[bold red]{error_msg}")
+            write_report(error_msg)
+            sys.exit(1)
+    
     console.print(Panel("System Status: AI Agent Live", style="green"))
     if conflicts:
         console.print(f"[bold yellow]High Risk: Semantic Merge Conflicts Detected![/bold yellow]\n")
         for c in conflicts:
             console.print(f"[red]- {c['old_path']} → {c['new_path']}")
-        gemini_report = analyze_with_gemini(conflicts)
-        console.print(Panel.fit(gemini_report, title="Gemini Analysis", style="cyan"), markup=True)
-        with open(REPORT_FILE, "w", encoding="utf-8") as f:
-            f.write(gemini_report)
+        try:
+            gemini_report = analyze_with_gemini(conflicts)
+            console.print(Panel.fit(gemini_report, title="Gemini Analysis", style="cyan"), markup=True)
+            write_report(gemini_report)
+        except Exception as e:
+            error_msg = f"❌ Error calling Gemini API: {e}"
+            console.print(f"[bold red]{error_msg}")
+            write_report(error_msg)
         sys.exit(1)
     else:
-        console.print("[bold green]No risky semantic merge conflicts detected.")
-        with open(REPORT_FILE, "w", encoding="utf-8") as f:
-            f.write("No risky semantic merge conflicts detected.")
+        console.print("[bold green]✅ No risky semantic merge conflicts detected.")
+        write_report("✅ No risky semantic merge conflicts detected.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="AI Merge Bot")
