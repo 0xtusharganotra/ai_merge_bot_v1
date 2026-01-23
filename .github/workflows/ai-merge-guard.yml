@@ -42,12 +42,3 @@ jobs:
                 body
               });
             }
-
-# ---
-# To use this workflow, add your Gemini API key as a repository secret named GEMINI_API_KEY:
-# 1. Go to your GitHub repository > Settings > Secrets and variables > Actions.
-# 2. Click "New repository secret".
-# 3. Name: GEMINI_API_KEY
-# 4. Value: <your Gemini API key>
-# 5. Save.
-# ---
